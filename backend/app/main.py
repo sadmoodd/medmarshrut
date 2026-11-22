@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("medmarshrut")
 
 
+
 async def _purge_loop(interval_minutes: int) -> None:
     while True:
         with contextlib.suppress(Exception):
@@ -45,6 +46,45 @@ def create_app() -> FastAPI:
         description="Первичная маршрутизация пациента. Сервис не ставит диагноз и не заменяет врача.",
         lifespan=lifespan,
     )
+    
+    import logging
+    import time
+    from fastapi import Request
+
+    logger = logging.getLogger("uvicorn.error")
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        start = time.perf_counter()
+
+        logger.info(
+            "Incoming %s %s",
+            request.method,
+            request.url.path
+        )
+
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception(
+                "Unhandled error: %s %s",
+                request.method,
+                request.url.path
+            )
+            raise
+
+        duration = time.perf_counter() - start
+
+        logger.info(
+            "Completed %s %s status=%s duration=%.3fs",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration
+        )
+
+        return response
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
