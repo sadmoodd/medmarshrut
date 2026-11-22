@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-medmarshrut}
+      POSTGRES_USER: ${POSTGRES_USER:-medmarshrut}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Порт БД наружу не публикуется: доступ только из внутренней сети compose.
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-medmarshrut}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-medmarshrut}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?Задайте DATA_ENCRYPTION_KEY в файле .env}
+      HASH_SALT: ${HASH_SALT:?Задайте HASH_SALT в файле .env}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
+      CORE_URL: ${CORE_URL:-https://tm-test-yakut.hostco.ru}
+      CORE_SERVICE_TOKEN: ${CORE_SERVICE_TOKEN:-}
+      CORS_ORIGINS: http://localhost:8080
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  # Запуск тестов: docker compose run --rm tests
+  tests:
+    build: ./backend
+    profiles: ["tests"]
+    command: ["pytest", "-v"]
+    environment:
+      DATABASE_URL: "sqlite://"
+
+volumes:
+  pgdata:
