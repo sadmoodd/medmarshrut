@@ -16,6 +16,12 @@ def make_engine(url: str):
     kwargs = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         kwargs = {"connect_args": {"check_same_thread": False}}
+    if url.startswith("postgresql://"):
+        url = url.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1
+        )
     return create_engine(url, **kwargs)
 
 
