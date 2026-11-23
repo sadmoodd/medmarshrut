@@ -1,3 +1,4 @@
+# проверены HTTP-эндпоинты и коды ошибок
 """HTTP API (версия v1)."""
 from __future__ import annotations
 
@@ -21,6 +22,8 @@ from .integrations.max_gateway import (
 from .models import PatientSession
 from .services import Conflict, Forbidden, NotFound, SessionService
 
+ERR_SESSION_NOT_FOUND = "Сессия не найдена или истекла. Начните заново."
+ERR_ACCESS_DENIED = "Нет доступа к сессии."
 router = APIRouter(prefix="/api/v1")
 
 
@@ -36,9 +39,9 @@ def _authorized(
     try:
         return service.get_authorized(session_id, x_session_token)
     except NotFound:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Сессия не найдена или истекла. Начните заново.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, ERR_SESSION_NOT_FOUND)
     except Forbidden:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Нет доступа к сессии.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, ERR_ACCESS_DENIED)
 
 
 @router.get("/health", tags=["system"])
