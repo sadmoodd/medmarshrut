@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from .dialog import DialogState, get_question
-from .knowledge import CATEGORIES, LOCATIONS, RedFlag
+from .knowledge import CATEGORIES, RedFlag
 
 
 class Urgency(str, Enum):
@@ -254,5 +254,5 @@ def build_recommendation(state: DialogState) -> Recommendation:
 
 __all__ = [
     "CARE_PLACE_LABELS", "URGENCY_LABELS", "CarePlace", "Recommendation", "Urgency",
-    "build_emergency", "build_recommendation", "LOCATIONS",
+    "build_emergency", "build_recommendation",
 ]
