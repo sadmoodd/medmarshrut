@@ -1,3 +1,4 @@
+# окончательное перед защитой
 """Точка входа FastAPI."""
 from __future__ import annotations
 

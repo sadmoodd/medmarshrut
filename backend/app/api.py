@@ -1,3 +1,4 @@
+# проверены HTTP-эндпоинты и коды ошибок
 """HTTP API (версия v1)."""
 from __future__ import annotations
 
